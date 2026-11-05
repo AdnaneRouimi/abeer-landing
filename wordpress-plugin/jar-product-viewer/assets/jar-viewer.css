@@ -1,0 +1,763 @@
+/* ---------------------------------------------------------------------------
+   Jar Product Viewer — scroll-driven 3D storytelling
+   Hero on top, jar in the middle, alternating panels while the jar spins,
+   then the lid opens as the story closes.
+   --------------------------------------------------------------------------- */
+
+.jp-viewer {
+    --jp-red: #8a1622;
+    --jp-red-dark: #6d0f1a;
+    --jp-gold: #c9a227;
+    --jp-ink: #191919;
+    --jp-muted: #6b6b70;
+    --jp-cream: #faf6f1;
+    --jp-line: rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--jp-ink);
+    background: var(--jp-cream);
+    line-height: 1.6;
+}
+
+body.page-id-41 {
+    background: #faf6f1;
+}
+
+html:has(body.page-id-41) {
+    scroll-behavior: smooth;
+    background: #faf6f1;
+}
+
+.jp-viewer section[id] {
+    scroll-margin-top: 4.8rem;
+}
+
+.jp-viewer *,
+.jp-viewer *::before,
+.jp-viewer *::after {
+    box-sizing: border-box;
+}
+
+/* ---- Eyebrow ------------------------------------------------------------- */
+.jp-eyebrow {
+    margin: 0 0 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--jp-gold);
+}
+
+/* ---- Navigation ---------------------------------------------------------- */
+.jp-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.05rem 5vw;
+    background: rgba(250, 246, 241, 0.82);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: transform 0.35s ease, background 0.3s ease;
+}
+
+.jp-nav.is-hidden {
+    transform: translateY(-100%);
+}
+
+.jp-nav__brand {
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.45em;
+    text-indent: 0.45em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--jp-red);
+}
+
+.jp-nav__links {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+}
+
+.jp-nav__links a {
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--jp-ink);
+    opacity: 0.82;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.jp-nav__links a:hover {
+    opacity: 1;
+    color: var(--jp-red);
+}
+
+/* ---- Sticky stage -------------------------------------------------------- */
+.jp-stage {
+    position: relative;
+    background:
+        radial-gradient(120% 90% at 50% 0%, #fffdfa 0%, var(--jp-cream) 55%, #f2e9de 100%);
+}
+
+.jp-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    min-height: 34rem;
+    overflow: hidden;
+}
+
+.jp-runway {
+    height: 520vh;
+}
+
+.jp-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.jp-canvas canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ---- Hero --------------------------------------------------------------- */
+.jp-hero {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 9vh 6vw 0;
+    pointer-events: none;
+}
+
+.jp-hero__brand {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: 0.62em;
+    text-indent: 0.62em;
+    text-transform: uppercase;
+    color: var(--jp-red);
+}
+
+.jp-hero__product {
+    margin: 0.6rem 0 0.7rem;
+    font-size: clamp(2.2rem, 5.6vw, 4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+}
+
+.jp-hero__tagline {
+    margin: 0;
+    max-width: 38ch;
+    font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+    color: var(--jp-muted);
+}
+
+.jp-hero__cue {
+    position: absolute;
+    left: 50%;
+    bottom: 3vh;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--jp-muted);
+    animation: jp-cue 2.2s ease-in-out infinite;
+}
+
+.jp-hero__cue::after {
+    content: "";
+    display: block;
+    width: 1px;
+    height: 1.2rem;
+    margin: 0.6rem auto 0;
+    background: linear-gradient(to bottom, currentColor, transparent);
+}
+
+@keyframes jp-cue {
+    0%, 100% { opacity: 0.85; }
+    50% { opacity: 0.4; }
+}
+
+/* ---- Alternating panels -------------------------------------------------- */
+.jp-panels {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.jp-panel {
+    position: absolute;
+    top: 50%;
+    width: min(27rem, 34vw);
+    padding: 2rem 2.2rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.74);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 30px 80px rgba(45, 20, 20, 0.14);
+    transform: translateY(-50%);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.jp-panel--right {
+    right: 7vw;
+}
+
+.jp-panel--left {
+    left: 7vw;
+}
+
+.jp-panel__index {
+    display: inline-block;
+    margin-bottom: 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    color: var(--jp-red);
+}
+
+.jp-panel__title {
+    margin: 0 0 0.6rem;
+    font-size: clamp(1.3rem, 2vw, 1.65rem);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.jp-panel__text {
+    margin: 0;
+    color: var(--jp-muted);
+    font-size: 0.98rem;
+}
+
+/* ---- Products section ---------------------------------------------------- */
+.jp-products {
+    position: relative;
+    padding: 11vh 6vw 8vh;
+    background: #fff;
+}
+
+.jp-products__inner {
+    max-width: 72rem;
+    margin: 0 auto;
+}
+
+.jp-products__title {
+    margin: 0;
+    font-size: clamp(1.7rem, 4vw, 2.7rem);
+    line-height: 1.15;
+}
+
+.jp-products__lead {
+    max-width: 48ch;
+    margin: 1rem 0 0;
+    color: var(--jp-muted);
+}
+
+.jp-products__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.8rem;
+}
+
+.jp-product {
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid var(--jp-line);
+    background: var(--jp-cream);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.jp-product:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.12);
+}
+
+.jp-product__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    background: radial-gradient(circle at 50% 38%, #f6ecdf 0%, #ecdcc8 70%, #e5d2bb 100%);
+    overflow: hidden;
+}
+
+.jp-product__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.jp-product:hover .jp-product__img {
+    transform: scale(1.12);
+}
+
+.jp-product__jar {
+    position: relative;
+    display: block;
+    width: 5.2rem;
+    height: 6.4rem;
+    border-radius: 1.1rem 1.1rem 1.4rem 1.4rem / 1.4rem 1.4rem 1.6rem 1.6rem;
+    background: linear-gradient(155deg, #a92130 0%, var(--jp-red) 45%, var(--jp-red-dark) 100%);
+    box-shadow:
+        inset 0 0.5rem 1.2rem rgba(255, 255, 255, 0.22),
+        inset 0 -0.8rem 1.4rem rgba(0, 0, 0, 0.28),
+        0 1.4rem 2.2rem rgba(0, 0, 0, 0.18);
+}
+
+.jp-product__jar::before {
+    content: "";
+    position: absolute;
+    top: -0.9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5.6rem;
+    height: 1.5rem;
+    border-radius: 0.7rem;
+    background: linear-gradient(180deg, #2d2d2f 0%, #111 100%);
+    box-shadow: 0 0.35rem 0.7rem rgba(0, 0, 0, 0.25);
+}
+
+.jp-product__jar::after {
+    content: "";
+    position: absolute;
+    top: 1.6rem;
+    left: 1rem;
+    width: 0.55rem;
+    height: 2.6rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.28);
+    filter: blur(1px);
+}
+
+.jp-product--gold .jp-product__media {
+    background: radial-gradient(circle at 50% 38%, #fbf3dd 0%, #f0e2be 70%, #e7d5a4 100%);
+}
+
+.jp-product--gold .jp-product__jar {
+    background: linear-gradient(155deg, #e6c766 0%, var(--jp-gold) 45%, #a17d15 100%);
+}
+
+.jp-product--dark .jp-product__media {
+    background: radial-gradient(circle at 50% 38%, #efe9e2 0%, #dfd3c6 70%, #d2c2b2 100%);
+}
+
+.jp-product--dark .jp-product__jar {
+    background: linear-gradient(155deg, #4a4a4c 0%, #2b2b2d 45%, #101011 100%);
+}
+
+.jp-product__body {
+    padding: 1.3rem 1.5rem 1.6rem;
+}
+
+.jp-product__name {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.jp-product__note {
+    margin: 0.3rem 0 1rem;
+    font-size: 0.88rem;
+    color: var(--jp-muted);
+}
+
+.jp-product__link {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--jp-red);
+}
+
+.jp-product__link:hover {
+    text-decoration: underline;
+}
+
+.jp-products__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+}
+
+.jp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 15px 32px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.jp-btn:hover {
+    transform: translateY(-2px);
+}
+
+.jp-btn__icon {
+    width: 1.15em;
+    height: 1.15em;
+    flex: none;
+}
+
+.jp-btn--shop {
+    background: var(--jp-red);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(138, 22, 34, 0.28);
+}
+
+.jp-btn--shop:hover {
+    background: var(--jp-red-dark);
+}
+
+.jp-btn--wa {
+    background: #25d366;
+    color: #08351f;
+    box-shadow: 0 14px 30px rgba(37, 211, 102, 0.28);
+}
+
+.jp-btn--wa:hover {
+    background: #1fbe5b;
+}
+
+.jp-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--jp-muted);
+}
+
+/* ---- Contact & map ------------------------------------------------------- */
+.jp-contact {
+    display: flex;
+    align-items: center;
+    min-height: 100vh;
+    padding: 8vh 6vw;
+    background: var(--jp-cream);
+}
+
+.jp-contact__inner {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 3rem;
+    align-items: center;
+    max-width: 72rem;
+    margin: 0 auto;
+}
+
+.jp-contact__title {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1.15;
+}
+
+.jp-contact__address {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 1.2rem 0 2rem;
+    color: var(--jp-muted);
+}
+
+.jp-contact__pin {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    color: var(--jp-red);
+}
+
+.jp-social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.jp-social__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.15rem;
+    border-radius: 999px;
+    border: 1px solid var(--jp-line);
+    background: #fff;
+    color: var(--jp-ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.jp-social__link:hover {
+    transform: translateY(-2px);
+    border-color: var(--jp-red);
+    color: var(--jp-red);
+}
+
+.jp-social__link--wa {
+    background: #25d366;
+    border-color: transparent;
+    color: #08351f;
+}
+
+.jp-social__link--wa:hover {
+    background: #1fbe5b;
+    color: #08351f;
+}
+
+.jp-social__icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: none;
+}
+
+.jp-contact__map {
+    position: relative;
+    min-height: 360px;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--jp-line);
+    box-shadow: 0 28px 70px rgba(45, 20, 20, 0.14);
+}
+
+.jp-contact__map iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    border: 0;
+    pointer-events: none;
+}
+
+.jp-contact__map.is-active iframe {
+    pointer-events: auto;
+}
+
+.jp-contact__map-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border: 0;
+    background: rgba(25, 25, 25, 0.18);
+    color: #fff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
+}
+
+.jp-contact__map.is-active .jp-contact__map-overlay {
+    display: none;
+}
+
+/* ---- Custom cursor ------------------------------------------------------- */
+.jp-cursor {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    display: none;
+}
+
+.jp-cursor.is-active {
+    display: block;
+}
+
+.jp-cursor__dot,
+.jp-cursor__ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.jp-cursor__dot {
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    background: var(--jp-red);
+}
+
+.jp-cursor__ring {
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+    border: 1.5px solid var(--jp-gold);
+    transition: width 0.28s ease, height 0.28s ease, margin 0.28s ease,
+        border-color 0.28s ease, background-color 0.28s ease, opacity 0.2s ease;
+}
+
+.jp-cursor__ring.is-hover {
+    width: 68px;
+    height: 68px;
+    margin: -34px 0 0 -34px;
+    border-color: var(--jp-red);
+    background: rgba(201, 162, 39, 0.08);
+}
+
+.jp-cursor__ring.is-down {
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+}
+
+.jp-cursor.is-hidden {
+    opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    body.page-id-41,
+    body.page-id-41 a,
+    body.page-id-41 button,
+    body.page-id-41 input,
+    body.page-id-41 textarea,
+    body.page-id-41 .jp-product {
+        cursor: none;
+    }
+}
+
+@media (hover: none), (pointer: coarse) {
+    .jp-cursor {
+        display: none !important;
+    }
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+.jp-footer {
+    padding: 2.6rem 6vw;
+    background: #171717;
+    color: rgba(255, 255, 255, 0.62);
+    text-align: center;
+}
+
+.jp-footer__text {
+    margin: 0;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+}
+
+.jp-footer__name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.3rem;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.jp-footer__name:hover {
+    color: var(--jp-gold);
+    border-color: var(--jp-gold);
+}
+
+.jp-footer__icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ---- Responsive ---------------------------------------------------------- */
+@media (max-width: 1100px) {
+    .jp-panel {
+        width: min(24rem, 40vw);
+    }
+}
+
+@media (max-width: 820px) {
+    .jp-hero {
+        padding-top: 7vh;
+    }
+
+    .jp-hero__cue {
+        margin-bottom: 4vh;
+    }
+
+    .jp-panel,
+    .jp-panel--left,
+    .jp-panel--right {
+        top: auto;
+        left: 5vw;
+        right: 5vw;
+        bottom: 5vh;
+        width: auto;
+        max-width: none;
+        padding: 1.4rem 1.5rem;
+        transform: none;
+    }
+
+    .jp-products__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .jp-runway {
+        height: 460vh;
+    }
+
+    .jp-contact__inner {
+        grid-template-columns: 1fr;
+    }
+
+    .jp-nav {
+        padding: 0.85rem 5vw;
+    }
+
+    .jp-nav__links {
+        gap: 0.85rem;
+    }
+
+    .jp-nav__links a {
+        font-size: 0.64rem;
+        letter-spacing: 0.06em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jp-hero__cue {
+        animation: none;
+    }
+}

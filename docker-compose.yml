@@ -1,0 +1,98 @@
+services:
+  wordpress:
+    image: wordpress:php8.2-apache
+    container_name: referral-wordpress
+    restart: unless-stopped
+    ports:
+      - "${WORDPRESS_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-change_this_db_password}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:-wordpress}
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wordpress-plugin/shopify-referral-tracker:/var/www/html/wp-content/plugins/shopify-referral-tracker
+      - ./wordpress-plugin/jar-product-viewer:/var/www/html/wp-content/plugins/jar-product-viewer
+      - ./wordpress-plugin/abeer_jar.glb:/var/www/html/wp-content/plugins/jar-product-viewer/assets/abeer_jar.glb
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - referral_net
+
+  db:
+    image: mariadb:11
+    container_name: referral-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${WORDPRESS_DB_NAME:-wordpress}
+      MARIADB_USER: ${WORDPRESS_DB_USER:-wordpress}
+      MARIADB_PASSWORD: ${WORDPRESS_DB_PASSWORD:-change_this_db_password}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-change_this_root_password}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - referral_net
+
+  n8n-db:
+    image: postgres:16-alpine
+    container_name: referral-n8n-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${N8N_DB_USER:-n8n}
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-change_this_n8n_password}
+      POSTGRES_DB: ${N8N_DB_NAME:-n8n}
+    volumes:
+      - n8n_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${N8N_DB_USER:-n8n} -d ${N8N_DB_NAME:-n8n}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - referral_net
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: referral-n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n-db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER:-n8n}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-change_this_n8n_password}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Africa/Casablanca}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on:
+      n8n-db:
+        condition: service_healthy
+    networks:
+      - referral_net
+
+volumes:
+  wordpress_data:
+  mariadb_data:
+  n8n_postgres_data:
+  n8n_data:
+
+networks:
+  referral_net:
+    driver: bridge

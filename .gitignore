@@ -1,0 +1,28 @@
+# ---- Secrets -------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---- Agent / tooling artifacts ------------------------------------------
+.playwright-mcp/
+wp-*.png
+Capture.PNG
+*.log
+
+# ---- Downloaded brand assets (not needed in the repo) --------------------
+instagram-download/
+
+# ---- OS / editors --------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---- Dependencies / caches ----------------------------------------------
+node_modules/
+__pycache__/
+*.pyc
+
+# ---- Runtime data (Docker volumes, not source) ---------------------------
+wordpress-data/
+dist/

@@ -1,0 +1,57 @@
+{
+  "name": "Shopify Referral Click - Receive Event",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shopify-referral-click",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a5c9d47b-7ec5-42cb-b8d2-a7b49e9df101",
+      "name": "Receive Referral Click",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "webhookId": "srt-referral-click"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json.body ?? $json;\\nreturn [{ json: { event: payload.event ?? 'unknown', source: payload.source ?? 'unknown', campaign: payload.campaign ?? 'default', clicked_at: payload.clicked_at ?? new Date().toISOString(), landing_page: payload.landing_page ?? '', destination: payload.destination ?? '', visitor: payload.visitor ?? '', user_agent: payload.user_agent ?? '' } }];"
+      },
+      "id": "d63c8a4e-21ad-4e43-9f0b-a6a94b13a102",
+      "name": "Normalize Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Receive Referral Click": {
+      "main": [
+        [
+          {
+            "node": "Normalize Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b8f19f2c-3c34-49c7-9b6c-1e50b9c7a103",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
